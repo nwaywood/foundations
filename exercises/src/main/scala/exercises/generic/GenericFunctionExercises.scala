@@ -18,19 +18,19 @@ object GenericFunctionExercises {
     // 1a. Implement `swap` which exchanges `first` and `second`
     // such as Pair("John", "Doe").swap == Pair("Doe", "John")
     def swap: Pair[A] =
-      ???
+      Pair(second, first)
 
     // 1b. Implement `map` which applies a function to `first` and `second`
     // such as Pair("John", "Doe").map(_.length) == Pair(4,3)
     def map[To](update: A => To): Pair[To] =
-      ???
+      Pair(update(first), update(second))
 
     // 1c. Implement `zipWith` which merges two Pairs using a `combine` function
     // such as Pair(0, 2).zipWith(Pair(3, 4))((x, y) => x + y) == Pair(3, 6)
     //         Pair(2, 3).zipWith(Pair("Hello ", "World "))(replicate) == Pair("Hello Hello ", "World World World ")
     // Bonus: Why did we separate the arguments of `zipWith` into two set of parentheses?
     def zipWith[Other, To](other: Pair[Other])(combine: (A, Other) => To): Pair[To] =
-      ???
+      Pair(combine(first, other.first), combine(second, other.second))
   }
 
   // 1d. Use the Pair API to decode the content of `secret`.
@@ -42,7 +42,10 @@ object GenericFunctionExercises {
       first = List(103, 110, 105, 109, 109, 97, 114, 103, 111, 114, 80),
       second = List(108, 97, 110, 111, 105, 116, 99, 110, 117, 70)
     )
-  lazy val decoded: Pair[String] = ???
+  val decoded: Pair[String] = secret
+    .map(a => new String(a.toArray))
+    .map(_.reverse)
+    .swap
 
   // 1e. Use the Pair API to combine `productNames` and `productPrices` into `products`
   // such as products == Pair(Product("Coffee", 2.5), Product("Plane ticket", 329.99))
@@ -52,7 +55,7 @@ object GenericFunctionExercises {
   val productPrices: Pair[Double] = Pair(2.5, 329.99)
 
   lazy val products: Pair[Product] =
-    ???
+    productNames.zipWith(productPrices)((name, price) => Product(name, price))
 
   //////////////////////////////////////////////
   // Bonus question (not covered by the video)
@@ -86,7 +89,7 @@ object GenericFunctionExercises {
     //         (isEven && isPositive)(-4) == false
     //         (isEven && isPositive)(-7) == false
     def &&(other: Predicate[A]): Predicate[A] =
-      ???
+      Predicate[A](value => eval(value) && other(value))
 
     // 2b. Implement `||` that combines two predicates using logical or
     // such as (isEven || isPositive)(12) == true
@@ -94,12 +97,18 @@ object GenericFunctionExercises {
     //         (isEven || isPositive)(-4) == true
     // but     (isEven || isPositive)(-7) == false
     def ||(other: Predicate[A]): Predicate[A] =
-      ???
+      Predicate[A](value => eval(value) || other(value))
 
     // 2c. Implement `flip` that reverses a predicate
     // such as isEven.flip(11) == true
     def flip: Predicate[A] =
-      ???
+      Predicate[A](!eval(_))
+
+    def contramap[B](update: B => A): Predicate[B] =
+      Predicate { (value: B) =>
+        val a = update(value)
+        eval(a)
+      }
   }
 
   // 2d. Implement `isValidUser`, a predicate which checks if a `User` is:
@@ -114,8 +123,32 @@ object GenericFunctionExercises {
   // You may want to create new Predicate methods to improve the implementation of `isValidUser`.
   case class User(name: String, age: Int)
 
-  lazy val isValidUser: Predicate[User] =
-    ???
+  val isOldEnough: Predicate[User] =
+    //   Predicate[User](u => u.age >= 18)
+    isBiggerThan(18).contramap(u => u.age)
+
+  val isNameLongEnough: Predicate[User] =
+    // Predicate[User](u => u.name.length >= 3)
+    isBiggerThan(3).contramap(_.name.length)
+
+  val isNameCapitalized: Predicate[User] =
+    Predicate[User](u => u.name.charAt(0).isUpper)
+
+  val isValidUser: Predicate[User] =
+    isOldEnough && isNameCapitalized && isNameLongEnough
+
+  def isBiggerThan(min: Int): Predicate[Int] =
+    Predicate(_ >= min)
+
+  val isValidUserV2: Predicate[User] =
+    isBiggerThan(18).contramap[User](_.age) &&
+      (isLongerThan(3) && isCapitalised).contramap(_.name)
+
+  def isLongerThan(min: Int): Predicate[String] =
+    isBiggerThan(min).contramap(_.length)
+
+  def isCapitalised: Predicate[String] =
+    Predicate(word => word.capitalize == word)
 
   ////////////////////////////
   // Exercise 3: JsonDecoder
@@ -126,6 +159,9 @@ object GenericFunctionExercises {
 
   trait JsonDecoder[A] {
     def decode(json: Json): A
+
+    def map[B](update: A => B): JsonDecoder[B] =
+      (json: Json) => update(decode(json))
   }
 
   val intDecoder: JsonDecoder[Int] = new JsonDecoder[Int] {
@@ -148,8 +184,9 @@ object GenericFunctionExercises {
   // such as userIdDecoder.decode("1234") == UserId(1234)
   // but     userIdDecoder.decode("hello") would throw an Exception
   case class UserId(value: Int)
-  lazy val userIdDecoder: JsonDecoder[UserId] =
-    ???
+  val userIdDecoder: JsonDecoder[UserId] =
+    // (json: Json) => UserId(intDecoder.decode(json))
+    intDecoder.map(i => UserId(i))
 
   // 3b. Implement `localDateDecoder`, a `JsonDecoder` for `LocalDate`
   // such as localDateDecoder.decode("\"2020-03-26\"") == LocalDate.of(2020,3,26)
@@ -158,13 +195,11 @@ object GenericFunctionExercises {
   // Note: You can parse a `LocalDate` using `LocalDate.parse` with a java.time.format.DateTimeFormatter
   // e.g. DateTimeFormatter.ISO_LOCAL_DATE
   lazy val localDateDecoder: JsonDecoder[LocalDate] =
-    ???
+    stringDecoder.map(s => LocalDate.parse(s, DateTimeFormatter.ISO_LOCAL_DATE))
 
   // 3c. Implement `map` a generic function that converts a `JsonDecoder` of `From`
   // into a `JsonDecoder` of `To`.
   // Bonus: Can you re-implement `userIdDecoder` and `localDateDecoder` using `map`
-  def map[From, To](decoder: JsonDecoder[From])(update: From => To): JsonDecoder[To] =
-    ???
 
   // 3d. Move `map` inside of `JsonDecoder` trait so that we can use the syntax
   // `intDecoder.map(_ + 1)` instead of `map(intDecoder)(_ + 1)`
