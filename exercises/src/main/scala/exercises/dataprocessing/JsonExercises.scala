@@ -12,8 +12,8 @@ object JsonExercises {
       case _: JsonNumber   => json
       case JsonString(str) => JsonString(str.trim)
       case JsonObject(obj) =>
-        val newObj = obj.map {
-          case (key, value) => (key, trimAll(value))
+        val newObj = obj.map { case (key, value) =>
+          (key, trimAll(value))
         }
         JsonObject(newObj)
     }
@@ -35,7 +35,15 @@ object JsonExercises {
   //  }                                           }
   //}                                           }
   def anonymize(json: Json): Json =
-    ???
+    json match {
+      case JsonNumber(_) => JsonNumber(0)
+      case JsonString(_) => JsonString("***")
+      case JsonObject(obj) =>
+        val newObj = obj.map { case (k, v) =>
+          (k, anonymize(v))
+        }
+        JsonObject(newObj)
+    }
 
   // b. Implement `search`, a method that checks if a JSON document contains a text.
   // Note: `search` doesn't look inside of the keys of a `JsonObject`, only the values.
@@ -46,15 +54,31 @@ object JsonExercises {
   // * search({ "message" : "hello" }, "ll") == true
   // * search({ "message" : "hi" }, "ll") == false
   def search(json: Json, text: String): Boolean =
-    ???
+    json match {
+      case JsonNumber(_)   => false
+      case JsonString(s)   => s.contains(text)
+      case JsonObject(obj) => obj.values.exists(search(_, text))
+    }
 
   // c. Implement `depth`, a method that calculates the maximum level of nesting of a JSON document.
   // For example:
   // * { }, 5 or "hello" have depth 0
   // * { "name" : "john" } has depth 1
   // * { "name" : "john", "address" : { "postcode" : "E16 4SR" } } has depth 2
-  def depth(json: Json): Int =
-    ???
+  def depth(json: Json): Int = {
+    lazy val depthHelper: (Json, Int) => Int = (json: Json, d: Int) => {
+      json match {
+        case JsonNumber(_) => d
+        case JsonString(_) => d
+        case JsonObject(obj) =>
+          obj.values.map(depthHelper(_, 1 + d)).maxOption match {
+            case Some(v) => v
+            case None    => d
+          }
+      }
+    }
+    depthHelper(json, 0)
+  }
 
   //////////////////////////////////////////////
   // Bonus question (not covered by the video)
