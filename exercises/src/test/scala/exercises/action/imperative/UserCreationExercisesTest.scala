@@ -17,7 +17,7 @@ import scala.util.{Failure, Success, Try}
 // testOnly exercises.action.imperative.UserCreationExercisesTest
 class UserCreationExercisesTest extends AnyFunSuite with ScalaCheckDrivenPropertyChecks {
 
-  ignore("readSubscribeToMailingList example") {
+  test("readSubscribeToMailingList example") {
     val inputs  = ListBuffer("N")
     val outputs = ListBuffer.empty[String]
     val console = Console.mock(inputs, outputs)
@@ -27,21 +27,21 @@ class UserCreationExercisesTest extends AnyFunSuite with ScalaCheckDrivenPropert
     assert(outputs.toList == List("Would you like to subscribe to our mailing list? [Y/N]"))
   }
 
-  ignore("readSubscribeToMailingList example failure") {
+  test("readSubscribeToMailingList example failure") {
     val console = Console.mock(ListBuffer("Never"), ListBuffer())
     val result  = Try(readSubscribeToMailingList(console))
 
     assert(result.isFailure)
   }
 
-  ignore("readDateOfBirth example success") {
+  test("readDateOfBirth example success") {
     val console = Console.mock(ListBuffer("21-07-1986"), ListBuffer())
     val result  = readDateOfBirth(console)
 
     assert(result == LocalDate.of(1986, 7, 21))
   }
 
-  ignore("readDateOfBirth example failure") {
+  test("readDateOfBirth example failure") {
     val console = Console.mock(ListBuffer("21/07/1986"), ListBuffer())
     val result  = Try(readDateOfBirth(console))
 

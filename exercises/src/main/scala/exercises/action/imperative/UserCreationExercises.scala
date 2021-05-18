@@ -44,8 +44,15 @@ object UserCreationExercises {
   // Throws an exception.
   // Note: You can read a user input using `StdIn.readLine()`.
   // Note: You can use `throw new IllegalArgumentException("...")` to throw an exception.
-  def readSubscribeToMailingList(): Boolean =
-    ???
+  def readSubscribeToMailingList(): Boolean = {
+    println("Would you like to subscribe to our mailing list? [Y/N]")
+    val line = StdIn.readLine()
+    line match {
+      case "Y"   => true
+      case "N"   => false
+      case other => throw new IllegalArgumentException(s"""Unexpected value $other""")
+    }
+  }
 
   // 2. How can we test `readSubscribeToMailingList`?
   // We cannot use example-based tests or property-based tests
@@ -56,8 +63,15 @@ object UserCreationExercises {
   // Then, try to test this version using property-based testing.
   // Note: Check the `Console` companion object.
   // Bonus: Try to write a property-based test for `readSubscribeToMailingList`
-  def readSubscribeToMailingList(console: Console): Boolean =
-    ???
+  def readSubscribeToMailingList(console: Console): Boolean = {
+    console.writeLine("Would you like to subscribe to our mailing list? [Y/N]")
+    val line = console.readLine()
+    line match {
+      case "Y"   => true
+      case "N"   => false
+      case other => throw new IllegalArgumentException(s"""Unexpected value $other""")
+    }
+  }
 
   // 3. Implement `readDateOfBirth` which asks the date of birth of the user.
   // User must answer using the format `dd-mm-yyyy`, e.g. "18-03-2001" for 18th of March 2001.
@@ -71,8 +85,11 @@ object UserCreationExercises {
   // Throws an exception.
   // Note: You can use `LocalDate.parse` to parse a String into a LocalDate.
   // Note: You can use the formatter `dateOfBirthFormatter` (in scope).
-  def readDateOfBirth(console: Console): LocalDate =
-    ???
+  def readDateOfBirth(console: Console): LocalDate = {
+    console.writeLine("What's your date of birth? [dd-mm-yyyy]")
+    val line = console.readLine()
+    LocalDate.parse(line, dateOfBirthFormatter)
+  }
 
   // 4. Implement a testable version of `readUser`.
   // For example,
